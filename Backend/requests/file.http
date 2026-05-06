@@ -1,0 +1,31 @@
+### Upload File
+# Uses multipart/form-data — attach file in your REST client
+POST http://localhost:5000/api/upload
+Content-Type: multipart/form-data; boundary=----FormBoundary
+
+------FormBoundary
+Content-Disposition: form-data; name="file"; filename="test.pdf"
+Content-Type: application/pdf
+
+< ./test-files/test.pdf
+------FormBoundary--
+
+### Upload Image File
+POST http://localhost:5000/api/upload
+Content-Type: multipart/form-data; boundary=----FormBoundary
+
+------FormBoundary
+Content-Disposition: form-data; name="file"; filename="photo.png"
+Content-Type: image/png
+
+< ./test-files/photo.png
+------FormBoundary--
+
+### Download / View File
+# Replace filename with actual uploaded filename
+GET http://localhost:5000/api/uploads/1700000000000-test.pdf
+Content-Type: application/json
+
+### Delete File
+DELETE http://localhost:5000/api/upload/1700000000000-test.pdf
+Content-Type: application/json

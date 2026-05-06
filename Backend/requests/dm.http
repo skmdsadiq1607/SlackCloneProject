@@ -1,0 +1,37 @@
+@baseUrl = http://localhost:5000/api
+@contentType = application/json
+
+### Start or Get DM Conversation
+# Replace :receiverId with actual user ID
+POST http://localhost:5000/api/dm/64f1c2e3a1b2c3d4e5f60002
+Content-Type: application/json
+
+### Get All My DM Conversations
+GET http://localhost:5000/api/dms
+Content-Type: application/json
+
+### Get Messages of a DM Conversation (Page 1)
+# Replace :conversationId with actual conversation ID
+GET http://localhost:5000/api/dm/64f1c2e3a1b2c3d4e5f60030/messages
+Content-Type: application/json
+
+### Get Messages of a DM Conversation (Page 2)
+GET http://localhost:5000/api/dm/64f1c2e3a1b2c3d4e5f60030/messages?page=2&limit=30
+Content-Type: application/json
+### Send DM Message
+POST {{baseUrl}}/dm/64f1c2e3a1b2c3d4e5f60030/message
+Content-Type: application/json
+{
+  "content": "Hey! How are you?",
+  "fileUrl": "",
+  "fileName": ""
+}
+
+### Send DM Message with File
+POST http://localhost:5000/api/dm/64f1c2e3a1b2c3d4e5f60030/message
+Content-Type: application/json
+{
+  "content": "Here is the file you asked for",
+  "fileUrl": "/uploads/1700000000000-report.pdf",
+  "fileName": "report.pdf"
+}

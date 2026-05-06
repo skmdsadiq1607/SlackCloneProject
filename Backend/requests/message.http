@@ -1,0 +1,89 @@
+### Send Message to Channel
+POST http://localhost:5000/api/message/channel
+Content-Type: application/json
+
+{
+  "content": "Hello everyone!",
+  "channelId": "64f1c2e3a1b2c3d4e5f60010",
+  "fileUrl": "",
+  "fileName": ""
+}
+
+### Send Message with File to Channel
+POST http://localhost:5000/api/message/channel
+Content-Type: application/json
+
+{
+  "content": "Check this file",
+  "channelId": "64f1c2e3a1b2c3d4e5f60010",
+  "fileUrl": "/uploads/1700000000000-document.pdf",
+  "fileName": "document.pdf"
+}
+
+### Get Channel Messages (Default Page 1)
+# Replace :channelId with actual channel ID
+GET http://localhost:5000/api/messages/channel/64f1c2e3a1b2c3d4e5f60010
+Content-Type: application/json
+
+### Get Channel Messages (Page 2)
+GET http://localhost:5000/api/messages/channel/64f1c2e3a1b2c3d4e5f60010?page=2&limit=30
+Content-Type: application/json
+
+### Edit Message
+# Replace :id with actual message ID
+PUT http://localhost:5000/api/message/64f1c2e3a1b2c3d4e5f60020
+Content-Type: application/json
+
+{
+  "content": "Hello everyone! (edited)"
+}
+
+### Delete Message (Soft Delete)
+PATCH http://localhost:5000/api/message/64f1c2e3a1b2c3d4e5f60020
+Content-Type: application/json
+
+### Add Reaction to Message
+PATCH http://localhost:5000/api/message/64f1c2e3a1b2c3d4e5f60020/react
+Content-Type: application/json
+{
+  "emoji": "👍"
+}
+
+### Add Another Reaction
+PATCH http://localhost:5000/api/message/64f1c2e3a1b2c3d4e5f60020/react
+Content-Type: application/json
+
+{
+  "emoji": "❤️"
+}
+
+### Toggle Off Reaction (Same emoji removes it)
+PATCH http://localhost:5000/api/message/64f1c2e3a1b2c3d4e5f60020/react
+Content-Type: application/json
+
+{
+  "emoji": "👍"
+}
+
+### Create Thread Reply
+# Replace :id with parent message ID
+POST http://localhost:5000/api/message/64f1c2e3a1b2c3d4e5f60020/thread
+Content-Type: application/json
+
+{
+  "content": "This is a thread reply",
+  "channelId": "64f1c2e3a1b2c3d4e5f60010"
+}
+
+### Send Another Thread Reply
+POST http://localhost:5000/api/message/64f1c2e3a1b2c3d4e5f60020/thread
+Content-Type: application/json
+
+{
+  "content": "Another reply in thread",
+  "channelId": "64f1c2e3a1b2c3d4e5f60010"
+}
+
+### Get Thread Replies
+GET http://localhost:5000/api/message/64f1c2e3a1b2c3d4e5f60020/thread
+Content-Type: application/json
