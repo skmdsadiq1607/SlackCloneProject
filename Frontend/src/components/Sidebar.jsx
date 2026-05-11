@@ -2,8 +2,12 @@ import React from 'react';
 import { useAuthStore } from '../store/authStore';
 import { useChatStore } from '../store/chatStore';
 import { Hash, MessageSquare, ChevronDown, Plus, LogOut, Settings, User } from 'lucide-react';
+import CreateChannelModal from './CreateChannelModal';
+import ProfileModal from './ProfileModal';
 
 const Sidebar = () => {
+  const [isChannelModalOpen, setIsChannelModalOpen] = React.useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = React.useState(false);
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const { channels, dms, setActiveChannel, setActiveDm, activeChannel, activeDm } = useChatStore();
@@ -23,7 +27,12 @@ const Sidebar = () => {
         <div style={styles.section}>
           <div style={styles.sectionHeader}>
             <span>Channels</span>
-            <button style={styles.addButton}><Plus size={14} /></button>
+            <button 
+              onClick={() => setIsChannelModalOpen(true)}
+              style={styles.addButton}
+            >
+              <Plus size={14} />
+            </button>
           </div>
           <div style={styles.list}>
             {channels.map((ch) => (
@@ -72,7 +81,7 @@ const Sidebar = () => {
       </div>
 
       {/* User Profile / Footer */}
-      <div style={styles.footer}>
+      <div style={styles.footer} onClick={() => setIsProfileModalOpen(true)}>
         <div style={styles.userInfo}>
           <div style={styles.avatar}>
              {user?.username?.[0].toUpperCase()}
@@ -80,14 +89,21 @@ const Sidebar = () => {
           <div style={styles.userDetails}>
             <span style={styles.userName}>{user?.username}</span>
             <div style={styles.userStatus}>
-              <div style={styles.onlineDot} /> Online
+              <div style={styles.onlineDot} /> {user?.customStatus || 'Online'}
             </div>
           </div>
         </div>
-        <div style={styles.footerActions}>
+        <div style={styles.footerActions} onClick={(e) => e.stopPropagation()}>
           <button onClick={logout} style={styles.footerBtn} title="Logout"><LogOut size={18} /></button>
         </div>
       </div>
+
+      {isChannelModalOpen && (
+        <CreateChannelModal onClose={() => setIsChannelModalOpen(false)} />
+      )}
+      {isProfileModalOpen && (
+        <ProfileModal onClose={() => setIsProfileModalOpen(false)} />
+      )}
     </div>
   );
 };
@@ -167,6 +183,8 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
+    cursor: 'pointer',
+    transition: 'background 0.2s',
   },
   userInfo: {
     display: 'flex',

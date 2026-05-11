@@ -4,11 +4,12 @@ import { useSocketStore } from '../store/socketStore';
 import { useChatStore } from '../store/chatStore';
 import Sidebar from '../components/Sidebar';
 import ChatArea from '../components/ChatArea';
+import ThreadPanel from '../components/ThreadPanel';
 
 const Dashboard = () => {
   const user = useAuthStore((state) => state.user);
   const { connect, socket, disconnect } = useSocketStore();
-  const { fetchChannels, fetchDms, addMessage, activeChannel, activeDm } = useChatStore();
+  const { fetchChannels, fetchDms, addMessage, addThreadReply, activeChannel, activeDm, activeThread } = useChatStore();
 
   useEffect(() => {
     // Connect socket on mount
@@ -35,20 +36,29 @@ const Dashboard = () => {
       }
     });
 
+    socket.on('thread:new_reply', (data) => {
+      if (activeThread && data.payload.threadId === activeThread.threadId) {
+        addThreadReply(data.payload);
+      }
+    });
+
     // Join rooms for active channels/dms
     if (activeChannel) socket.emit('channel:join', { channelId: activeChannel._id });
     if (activeDm) socket.emit('dm:join', { conversationId: activeDm._id });
+    if (activeThread) socket.emit('thread:join', { threadId: activeThread.threadId });
 
     return () => {
       socket.off('message:new');
       socket.off('dm:new');
+      socket.off('thread:new_reply');
     };
-  }, [socket, activeChannel, activeDm]);
+  }, [socket, activeChannel, activeDm, activeThread]);
 
   return (
     <div className="app-container">
       <Sidebar />
       <ChatArea />
+      {activeThread && <ThreadPanel />}
     </div>
   );
 };

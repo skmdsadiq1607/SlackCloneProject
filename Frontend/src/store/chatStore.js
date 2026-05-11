@@ -6,7 +6,9 @@ export const useChatStore = create((set, get) => ({
   dms: [],
   activeChannel: null,
   activeDm: null,
+  activeThread: null,
   messages: [],
+  threadMessages: [],
   loading: false,
 
   fetchChannels: async () => {
@@ -17,6 +19,12 @@ export const useChatStore = create((set, get) => ({
     } catch (err) {
       set({ loading: false });
     }
+  },
+
+  createChannel: async (data) => {
+    const res = await api.post('/channels', data);
+    set((state) => ({ channels: [...state.channels, res.data.payload] }));
+    return res.data;
   },
 
   fetchDms: async () => {
@@ -49,5 +57,21 @@ export const useChatStore = create((set, get) => ({
 
   addMessage: (message) => {
     set((state) => ({ messages: [...state.messages, message] }));
+  },
+
+  setActiveThread: (message) => {
+    set({ activeThread: message, threadMessages: [] });
+    if (message) get().fetchThreadReplies(message._id);
+  },
+
+  fetchThreadReplies: async (messageId) => {
+    try {
+      const res = await api.get(`/messages/${messageId}/thread`);
+      set({ threadMessages: res.data.payload.replies });
+    } catch (err) {}
+  },
+
+  addThreadReply: (reply) => {
+    set((state) => ({ threadMessages: [...state.threadMessages, reply] }));
   }
 }));
