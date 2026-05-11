@@ -1,0 +1,89 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --primary: #1264a3;
+  --primary-hover: #0b4d82;
+  --bg-sidebar: #19171d;
+  --bg-sidebar-hover: #27242c;
+  --bg-main: #ffffff;
+  --text-main: #1d1c1d;
+  --text-sub: #616061;
+  --text-sidebar: #cfc3cf;
+  --border: #dddddd;
+  --online: #2bac76;
+  --offline: #717171;
+  --danger: #e01e5a;
+  --sidebar-width: 260px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: var(--text-main);
+  background-color: var(--bg-main);
+  overflow: hidden; /* App will handle scroll */
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+input {
+  font-family: inherit;
+  outline: none;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Layout Classes */
+.app-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+}
+
+.sidebar {
+  width: var(--sidebar-width);
+  background-color: var(--bg-sidebar);
+  color: var(--text-sidebar);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.main-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-main);
+  overflow: hidden;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cccccc;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #999999;
+}

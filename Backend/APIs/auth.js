@@ -52,6 +52,11 @@ authApp.post("/login", async (req, res) => {
     })
     // update status to online
     await UserModel.findByIdAndUpdate(user._id, { status: "online" })
+    
+    // broadcast status change
+    const io = req.app.get("io")
+    io.emit("user:status_changed", { userId: user._id, status: "online" })
+
     res.status(200).json({ message: "Login successful", payload: { username: user.username, role: user.role } })
 })
 // Logout

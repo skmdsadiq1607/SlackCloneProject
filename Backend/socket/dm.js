@@ -16,7 +16,7 @@ export const dmHandler = (io, socket) => {
             if (!isParticipant) {
                 return socket.emit("error", { message: "Not authorized to join this conversation" })
             }
-            socket.join(conversationId)
+            socket.join(`dm:${conversationId}`)
             socket.emit("dm:joined", { message: "Joined DM", conversationId })
         } catch (err) {
             socket.emit("error", { message: err.message })
@@ -24,7 +24,7 @@ export const dmHandler = (io, socket) => {
     })
     // leave DM room
     socket.on("dm:leave", ({ conversationId }) => {
-        socket.leave(conversationId)
+        socket.leave(`dm:${conversationId}`)
         socket.emit("dm:left", { conversationId })
     })
     // send DM message via socket
@@ -49,20 +49,25 @@ export const dmHandler = (io, socket) => {
             conversation.lastMessage = newMessage._id
             await conversation.save()
             // emit to both participants in room
-            io.to(conversationId).emit("dm:new_message", { payload: newMessage })
+            io.to(`dm:${conversationId}`).emit("dm:new", { payload: newMessage })
+
+            // notify participants to update sidebar
+            conversation.participants.forEach(p => {
+                io.to(`user:${p}`).emit("conversation:updated", { payload: conversation })
+            })
         } catch (err) {
             socket.emit("error", { message: err.message })
         }
     })
     // typing indicator in DM
     socket.on("dm:typing_start", ({ conversationId }) => {
-        socket.to(conversationId).emit("dm:typing", {
+        socket.to(`dm:${conversationId}`).emit("dm:typing", {
             username: socket.user?.username,
             isTyping: true
         })
     })
     socket.on("dm:typing_stop", ({ conversationId }) => {
-        socket.to(conversationId).emit("dm:typing", {
+        socket.to(`dm:${conversationId}`).emit("dm:typing", {
             username: socket.user?.username,
             isTyping: false
         })

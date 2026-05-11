@@ -7,14 +7,14 @@ export const messageHandler = (io, socket) => {
             const sender = socket.user?.id
             // check user is member
             const channel = await ChannelModel.findById(channelId)
-            if (!channel || !channel.members.includes(sender)) {
+            if (!channel || !channel.members.some(m => m.toString() === sender)) {
                 return socket.emit("error", { message: "Not a member of this channel" })
             }
             const newMessage = new MessageModel({ content, sender, channelId, fileUrl, fileName })
             await newMessage.save()
             await newMessage.populate("sender", "username avatarUrl")
             // broadcast to all in channel room
-            io.to(channelId).emit("message:new", { payload: newMessage })
+            io.to(`channel:${channelId}`).emit("message:new", { payload: newMessage })
         } catch (err) {
             socket.emit("error", { message: err.message })
         }
@@ -32,7 +32,7 @@ export const messageHandler = (io, socket) => {
                 return socket.emit("error", { message: "Not authorized to edit" })
             }
             // broadcast edit to channel room
-            io.to(msg.channelId.toString()).emit("message:edited", { payload: msg })
+            io.to(`channel:${msg.channelId.toString()}`).emit("message:edited", { payload: msg })
         } catch (err) {
             socket.emit("error", { message: err.message })
         }
@@ -48,7 +48,7 @@ export const messageHandler = (io, socket) => {
             msg.isMessageActive = false
             await msg.save()
             // broadcast delete to channel room
-            io.to(msg.channelId.toString()).emit("message:deleted", { messageId })
+            io.to(`channel:${msg.channelId.toString()}`).emit("message:deleted", { messageId })
         } catch (err) {
             socket.emit("error", { message: err.message })
         }
@@ -80,7 +80,7 @@ export const messageHandler = (io, socket) => {
             }
             await msg.save()
             // broadcast reaction update to channel room
-            const roomId = msg.channelId?.toString() || msg.conversationId?.toString()
+            const roomId = msg.channelId ? `channel:${msg.channelId}` : `dm:${msg.conversationId}`
             io.to(roomId).emit("message:reacted", { payload: msg })
         } catch (err) {
             socket.emit("error", { message: err.message })

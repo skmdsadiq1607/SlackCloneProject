@@ -10,11 +10,17 @@ messageApp.post("/message/channel", verifyToken("USER", "ADMIN"), async (req, re
     const sender = req.user?.id
     // check user is member of channel
     const channel = await ChannelModel.findById(channelId)
-    if (!channel || !channel.members.includes(sender)) {
+    if (!channel || !channel.members.some(m => m.toString() === sender)) {
         return res.status(403).json({ message: "Not a member of this channel" })
     }
     const newMessage = new MessageModel({ content, sender, channelId, fileUrl, fileName })
     await newMessage.save()
+    await newMessage.populate("sender", "username avatarUrl")
+    
+    // broadcast to socket
+    const io = req.app.get("io")
+    io.to(`channel:${channelId}`).emit("message:new", { payload: newMessage })
+
     res.status(201).json({ message: "Message sent", payload: newMessage })
 })
 // Get messages of a channel (with pagination)
@@ -37,10 +43,16 @@ messageApp.put("/message/:id", verifyToken("USER", "ADMIN"), async (req, res) =>
         { _id: id, sender: userId, isMessageActive: true },
         { $set: { content, isEdited: true } },
         { new: true }
-    )
+    ).populate("sender", "username avatarUrl")
     if (!msg) {
         return res.status(403).json({ message: "Not authorized to edit this message" })
     }
+    
+    // broadcast edit
+    const io = req.app.get("io")
+    const roomId = msg.channelId ? `channel:${msg.channelId}` : `dm:${msg.conversationId}`
+    io.to(roomId).emit("message:edited", { payload: msg })
+
     res.status(200).json({ message: "Message updated", payload: msg })
 })
 // Soft delete message
@@ -56,6 +68,12 @@ messageApp.patch("/message/:id", verifyToken("USER", "ADMIN"), async (req, res) 
     }
     msg.isMessageActive = false
     await msg.save()
+    
+    // broadcast delete
+    const io = req.app.get("io")
+    const roomId = msg.channelId ? `channel:${msg.channelId}` : `dm:${msg.conversationId}`
+    io.to(roomId).emit("message:deleted", { messageId: id })
+
     res.status(200).json({ message: "Message deleted", payload: msg })
 })
 // Add/remove reaction to a message
@@ -88,6 +106,13 @@ messageApp.patch("/message/:id/react", verifyToken("USER", "ADMIN"), async (req,
         }
     }
     await msg.save()
+    await msg.populate("sender", "username avatarUrl")
+    
+    // broadcast reaction
+    const io = req.app.get("io")
+    const roomId = msg.channelId ? `channel:${msg.channelId}` : `dm:${msg.conversationId}`
+    io.to(roomId).emit("message:reacted", { payload: msg })
+
     res.status(200).json({ message: "Reaction updated", payload: msg })
 })
 // Create thread reply
@@ -112,9 +137,21 @@ messageApp.post("/message/:id/thread", verifyToken("USER", "ADMIN"), async (req,
     // create reply message
     const replyMsg = new MessageModel({ content, sender, channelId, threadId: thread._id })
     await replyMsg.save()
+    await replyMsg.populate("sender", "username avatarUrl")
+    
     // push reply to thread
     thread.replies.push(replyMsg._id)
     await thread.save()
+
+    // broadcast to socket
+    const io = req.app.get("io")
+    io.to(`thread:${thread._id}`).emit("thread:new_reply", { payload: replyMsg })
+    io.to(channelId).emit("thread:reply_count_updated", {
+        parentMessageId: id,
+        threadId: thread._id,
+        replyCount: thread.replies.length
+    })
+
     res.status(201).json({ message: "Reply sent", payload: replyMsg })
 })
 // Get thread replies
@@ -126,4 +163,41 @@ messageApp.get("/message/:id/thread", verifyToken("USER", "ADMIN"), async (req, 
         return res.status(200).json({ message: "No thread yet", payload: [] })
     }
     res.status(200).json({ message: "Thread replies", payload: thread.replies })
+})
+
+// Search messages
+messageApp.get("/messages/search", verifyToken("USER", "ADMIN"), async (req, res) => {
+    const { query, channelId, conversationId } = req.query
+    if (!query) {
+        return res.status(400).json({ message: "Search query is required" })
+    }
+    const filter = {
+        content: { $regex: query, $options: "i" },
+        isMessageActive: true
+    }
+    if (channelId) filter.channelId = channelId
+    if (conversationId) filter.conversationId = conversationId
+
+    const messages = await MessageModel.find(filter)
+        .populate("sender", "username avatarUrl")
+        .sort({ createdAt: -1 })
+        .limit(50)
+    res.status(200).json({ message: "Search results", payload: messages })
+})
+
+// Get all files in a channel or conversation
+messageApp.get("/messages/files", verifyToken("USER", "ADMIN"), async (req, res) => {
+    const { channelId, conversationId } = req.query
+    const filter = {
+        fileUrl: { $ne: "" },
+        isMessageActive: true
+    }
+    if (channelId) filter.channelId = channelId
+    if (conversationId) filter.conversationId = conversationId
+
+    const messages = await MessageModel.find(filter)
+        .select("fileName fileUrl sender createdAt")
+        .populate("sender", "username avatarUrl")
+        .sort({ createdAt: -1 })
+    res.status(200).json({ message: "Files found", payload: messages })
 })

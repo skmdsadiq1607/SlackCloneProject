@@ -5,8 +5,8 @@ const storage = multer.diskStorage({
         cb(null, "uploads/")
     },
     filename: (req, file, cb) => {
-        const uniqueName = `${Date.now()}-${file.originalname}`
-        cb(null, uniqueName)
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
+        cb(null, `${uniqueSuffix}-${file.originalname}`)
     }
 })
 const fileFilter = (req, file, cb) => {

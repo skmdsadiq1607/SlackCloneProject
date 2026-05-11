@@ -1,0 +1,15 @@
+# Root gitignore
+node_modules/
+.env
+.env.local
+dist/
+build/
+.DS_Store
+
+# Backend specific
+Backend/uploads/*
+!Backend/uploads/.gitkeep
+
+# Frontend specific
+Frontend/dist/
+Frontend/.env

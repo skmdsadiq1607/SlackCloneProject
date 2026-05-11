@@ -14,10 +14,10 @@ userApp.get("/profile", verifyToken("USER", "ADMIN"), async (req, res) => {
 // Update own profile
 userApp.put("/profile", verifyToken("USER", "ADMIN"), async (req, res) => {
     const userId = req.user?.id
-    const { username, avatarUrl, status } = req.body
+    const { username, avatarUrl, status, customStatus, statusEmoji } = req.body
     const updatedUser = await UserModel.findByIdAndUpdate(
         userId,
-        { $set: { username, avatarUrl, status } },
+        { $set: { username, avatarUrl, status, customStatus, statusEmoji } },
         { new: true }
     ).select("-password")
     res.status(200).json({ message: "Profile updated", payload: updatedUser })

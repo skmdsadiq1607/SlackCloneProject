@@ -12,9 +12,9 @@ export const channelHandler = (io, socket) => {
             if (!channel.members.map(m => m.toString()).includes(userId)) {
                 return socket.emit("error", { message: "Not a member of this channel" })
             }
-            socket.join(channelId)
+            socket.join(`channel:${channelId}`)
             // notify others in channel
-            socket.to(channelId).emit("channel:user_joined", {
+            socket.to(`channel:${channelId}`).emit("channel:user_joined", {
                 username: socket.user?.username,
                 channelId
             })
@@ -26,8 +26,8 @@ export const channelHandler = (io, socket) => {
     // leave channel room
     socket.on("channel:leave", async ({ channelId }) => {
         try {
-            socket.leave(channelId)
-            socket.to(channelId).emit("channel:user_left", {
+            socket.leave(`channel:${channelId}`)
+            socket.to(`channel:${channelId}`).emit("channel:user_left", {
                 username: socket.user?.username,
                 channelId
             })
@@ -38,7 +38,7 @@ export const channelHandler = (io, socket) => {
     })
     // typing indicator start
     socket.on("channel:typing_start", ({ channelId }) => {
-        socket.to(channelId).emit("channel:typing", {
+        socket.to(`channel:${channelId}`).emit("channel:typing", {
             username: socket.user?.username,
             isTyping: true,
             channelId
@@ -46,7 +46,7 @@ export const channelHandler = (io, socket) => {
     })
     // typing indicator stop
     socket.on("channel:typing_stop", ({ channelId }) => {
-        socket.to(channelId).emit("channel:typing", {
+        socket.to(`channel:${channelId}`).emit("channel:typing", {
             username: socket.user?.username,
             isTyping: false,
             channelId

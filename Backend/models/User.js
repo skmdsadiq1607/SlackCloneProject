@@ -24,6 +24,14 @@ const userSchema = new Schema({
         enum: ["online", "offline", "away"],
         default: "offline"
     },
+    customStatus: {
+        type: String,
+        default: ""
+    },
+    statusEmoji: {
+        type: String,
+        default: ""
+    },
     role: {
         type: String,
         enum: ["USER", "ADMIN"],

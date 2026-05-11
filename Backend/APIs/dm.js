@@ -39,7 +39,7 @@ dmApp.get("/dm/:conversationId/messages", verifyToken("USER", "ADMIN"), async (r
     const { page = 1, limit = 30 } = req.query
     // verify user is part of conversation
     const conversation = await ConversationModel.findById(conversationId)
-    if (!conversation || !conversation.participants.includes(userId)) {
+    if (!conversation || !conversation.participants.some(p => p.toString() === userId)) {
         return res.status(403).json({ message: "Not authorized to view this conversation" })
     }
     const messages = await MessageModel.find({ conversationId, isMessageActive: true })
@@ -56,14 +56,26 @@ dmApp.post("/dm/:conversationId/message", verifyToken("USER", "ADMIN"), async (r
     const { content, fileUrl, fileName } = req.body
     // verify user is part of conversation
     const conversation = await ConversationModel.findById(conversationId)
-    if (!conversation || !conversation.participants.includes(sender)) {
+    if (!conversation || !conversation.participants.some(p => p.toString() === sender)) {
         return res.status(403).json({ message: "Not authorized" })
     }
     // create message
     const newMessage = new MessageModel({ content, sender, conversationId, fileUrl, fileName })
     await newMessage.save()
+    await newMessage.populate("sender", "username avatarUrl")
+    
     // update lastMessage in conversation
     conversation.lastMessage = newMessage._id
     await conversation.save()
+
+    // broadcast to conversation room
+    const io = req.app.get("io")
+    io.to(`dm:${conversationId}`).emit("dm:new", { payload: newMessage })
+
+    // also notify participants to update their conversation list (sidebar)
+    conversation.participants.forEach(p => {
+        io.to(`user:${p}`).emit("conversation:updated", { payload: conversation })
+    })
+
     res.status(201).json({ message: "DM sent", payload: newMessage })
 })
