@@ -114,6 +114,7 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     borderRight: '1px solid #2d2a33',
+    backgroundColor: 'var(--bg-dark)',
   },
   header: {
     padding: '16px',
@@ -194,7 +195,7 @@ const styles = {
   avatar: {
     width: '36px',
     height: '36px',
-    backgroundColor: '#1264a3',
+    backgroundColor: 'var(--slack-blue)',
     borderRadius: '4px',
     display: 'flex',
     alignItems: 'center',

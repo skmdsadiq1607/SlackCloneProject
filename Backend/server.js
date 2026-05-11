@@ -1,3 +1,4 @@
+import mongoose from 'mongoose'
 import { createServer } from 'http'
 import { Server } from 'socket.io'
 import { app } from './app.js'
@@ -28,10 +29,8 @@ async function shutdown(server) {
     console.log('Shutting down gracefully...')
     server.close(async () => {
         console.log('HTTP server closed.')
-        // close DB connection here if connectDB provides a way, 
-        // but Mongoose usually handles its own pool. 
-        // For strictness:
-        // await mongoose.connection.close()
+        await mongoose.connection.close()
+        console.log('Database connection closed.')
         process.exit(0)
     })
 }

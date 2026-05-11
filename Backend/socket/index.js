@@ -13,7 +13,17 @@ export const initSocket = (io) => {
     // socket auth middleware
     io.use(async (socket, next) => {
         try {
-            const token = socket.handshake.auth?.token
+            let token = socket.handshake.auth?.token;
+            
+            // If no token in auth, try cookies
+            if (!token && socket.handshake.headers.cookie) {
+                const cookieToken = socket.handshake.headers.cookie
+                    .split(';')
+                    .find(c => c.trim().startsWith('token='))
+                    ?.split('=')[1];
+                token = cookieToken;
+            }
+
             if (!token) {
                 return next(new Error("Authentication required"))
             }

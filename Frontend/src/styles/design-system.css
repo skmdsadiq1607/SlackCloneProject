@@ -1,0 +1,46 @@
+/* Global Design Tokens */
+
+:root {
+  /* Colors */
+  --slack-purple: #4a154b;
+  --slack-blue: #1264a3;
+  --slack-green: #2bac76;
+  --slack-red: #e01e5a;
+  --slack-yellow: #ecb22e;
+  
+  /* Neutral */
+  --bg-dark: #19171d;
+  --bg-light: #f8f8f8;
+  --border-light: #dddddd;
+  
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* Common Classes */
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.text-truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: var(--shadow-md);
+  padding: var(--space-md);
+}

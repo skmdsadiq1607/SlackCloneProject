@@ -1,18 +1,19 @@
+@import './styles/design-system.css';
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
-  --primary: #1264a3;
+  --primary: var(--slack-blue);
   --primary-hover: #0b4d82;
-  --bg-sidebar: #19171d;
+  --bg-sidebar: var(--bg-dark);
   --bg-sidebar-hover: #27242c;
   --bg-main: #ffffff;
   --text-main: #1d1c1d;
-  --text-sub: #616061;
+  --text-sub: var(--text-sub-color, #616061);
   --text-sidebar: #cfc3cf;
-  --border: #dddddd;
-  --online: #2bac76;
+  --border: var(--border-light);
+  --online: var(--slack-green);
   --offline: #717171;
-  --danger: #e01e5a;
+  --danger: var(--slack-red);
   --sidebar-width: 260px;
 }
 

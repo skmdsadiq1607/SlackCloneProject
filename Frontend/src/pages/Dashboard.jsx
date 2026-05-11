@@ -5,8 +5,10 @@ import { useChatStore } from '../store/chatStore';
 import Sidebar from '../components/Sidebar';
 import ChatArea from '../components/ChatArea';
 import ThreadPanel from '../components/ThreadPanel';
+import CallModal from '../components/CallModal';
 
 const Dashboard = () => {
+  const [activeCall, setActiveCall] = React.useState(null);
   const user = useAuthStore((state) => state.user);
   const { connect, socket, disconnect } = useSocketStore();
   const { fetchChannels, fetchDms, addMessage, addThreadReply, activeChannel, activeDm, activeThread } = useChatStore();
@@ -42,6 +44,18 @@ const Dashboard = () => {
       }
     });
 
+    socket.on('call:incoming', (data) => {
+      setActiveCall({
+        callId: data.callId,
+        callerId: data.from,
+        callerName: data.callerName || 'Unknown User'
+      });
+    });
+
+    socket.on('call:ended', () => {
+      setActiveCall(null);
+    });
+
     // Join rooms for active channels/dms
     if (activeChannel) socket.emit('channel:join', { channelId: activeChannel._id });
     if (activeDm) socket.emit('dm:join', { conversationId: activeDm._id });
@@ -51,14 +65,22 @@ const Dashboard = () => {
       socket.off('message:new');
       socket.off('dm:new');
       socket.off('thread:new_reply');
+      socket.off('call:incoming');
+      socket.off('call:ended');
     };
   }, [socket, activeChannel, activeDm, activeThread]);
 
   return (
     <div className="app-container">
       <Sidebar />
-      <ChatArea />
+      <ChatArea onStartCall={(data) => setActiveCall(data)} />
       {activeThread && <ThreadPanel />}
+      {activeCall && (
+        <CallModal 
+          callData={activeCall} 
+          onEnd={() => setActiveCall(null)} 
+        />
+      )}
     </div>
   );
 };

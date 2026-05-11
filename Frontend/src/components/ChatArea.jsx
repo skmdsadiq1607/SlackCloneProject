@@ -2,12 +2,17 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useChatStore } from '../store/chatStore';
 import { useAuthStore } from '../store/authStore';
 import api from '../api';
-import { Hash, Send, Paperclip, Info, Phone, Video, Search, MessageSquare, Plus } from 'lucide-react';
+import { Hash, Send, Paperclip, Info, Phone, Video, Search, MessageSquare, Plus, Users } from 'lucide-react';
+import MembersList from './MembersList';
 
-const ChatArea = () => {
+const ChatArea = ({ onStartCall }) => {
   const { activeChannel, activeDm, messages, loading, setActiveThread } = useChatStore();
   const user = useAuthStore((state) => state.user);
   const [content, setContent] = useState('');
+  const [typingUser, setTypingUser] = useState(null);
+  const [showMembers, setShowMembers] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
   const [file, setFile] = useState(null);
   const scrollRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -48,6 +53,81 @@ const ChatArea = () => {
     }
   };
 
+  const handleInitiateCall = async (type) => {
+    try {
+      const data = activeChannel 
+        ? { type: 'channel', channelId: activeChannel._id, callType: type }
+        : { type: 'dm', conversationId: activeDm._id, callType: type };
+      
+      const res = await api.post('/call/initiate', data);
+      onStartCall({
+        callId: res.data.payload._id,
+        callerName: activeChannel ? activeChannel.name : activeDm.participants.find(p => p._id !== user.id)?.username
+      });
+    } catch (err) {
+      alert('Failed to initiate call');
+    }
+  };
+
+  const handleTyping = (e) => {
+    setContent(e.target.value);
+    const socket = useSocketStore.getState().socket;
+    if (socket) {
+      const room = activeChannel ? activeChannel._id : activeDm._id;
+      socket.emit('typing:start', { room });
+      
+      // Stop typing after 2 seconds of inactivity
+      clearTimeout(window.typingTimeout);
+      window.typingTimeout = setTimeout(() => {
+        socket.emit('typing:stop', { room });
+      }, 2000);
+    }
+  };
+
+  useEffect(() => {
+    const socket = useSocketStore.getState().socket;
+    if (!socket) return;
+
+    const onTypingStart = (data) => {
+      if (data.userId !== user.id) setTypingUser(data.username);
+    };
+
+    const onTypingStop = () => {
+      setTypingUser(null);
+    };
+
+    socket.on('typing:start', onTypingStart);
+    socket.on('typing:stop', onTypingStop);
+
+    return () => {
+      socket.off('typing:start', onTypingStart);
+      socket.off('typing:stop', onTypingStop);
+    };
+  }, [activeChannel, activeDm, user.id]);
+
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) {
+      setIsSearching(false);
+      const type = activeChannel ? 'channel' : 'dm';
+      const id = activeChannel ? activeChannel._id : activeDm._id;
+      useChatStore.getState().fetchMessages(type, id);
+      return;
+    }
+    
+    setIsSearching(true);
+    try {
+      const res = await api.get(`/messages/search?q=${searchQuery}`);
+      // Filter search results by current channel/DM
+      const filtered = res.data.payload.filter(m => 
+        activeChannel ? m.channelId === activeChannel._id : m.conversationId === activeDm._id
+      );
+      useChatStore.setState({ messages: filtered });
+    } catch (err) {
+      console.error('Search failed', err);
+    }
+  };
+
   if (!activeChannel && !activeDm) {
     return (
       <div style={styles.empty}>
@@ -66,9 +146,26 @@ const ChatArea = () => {
           {activeChannel ? <Hash size={18} /> : <div style={styles.userDot} />}
           <h2 style={styles.title}>{title}</h2>
         </div>
+        <div style={styles.headerCenter}>
+          <form onSubmit={handleSearch} style={styles.searchForm}>
+            <Search size={14} style={styles.searchIcon} />
+            <input 
+              type="text" 
+              placeholder="Search messages..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={styles.searchInput}
+            />
+          </form>
+        </div>
         <div style={styles.headerRight}>
-          <button style={styles.headerBtn}><Phone size={18} /></button>
-          <button style={styles.headerBtn}><Video size={18} /></button>
+          <button style={styles.headerBtn} onClick={() => handleInitiateCall('audio')}><Phone size={18} /></button>
+          <button style={styles.headerBtn} onClick={() => handleInitiateCall('video')}><Video size={18} /></button>
+          {activeChannel && (
+            <button style={styles.headerBtn} onClick={() => setShowMembers(true)} title="View Members">
+              <Users size={18} />
+            </button>
+          )}
           <button style={styles.headerBtn}><Info size={18} /></button>
         </div>
       </header>
@@ -120,6 +217,7 @@ const ChatArea = () => {
 
       {/* Message Input */}
       <div style={styles.inputArea}>
+        {typingUser && <div style={styles.typingIndicator}>{typingUser} is typing...</div>}
         {file && (
           <div style={styles.filePreview}>
             <span>📎 {file.name}</span>
@@ -144,7 +242,7 @@ const ChatArea = () => {
             type="text" 
             placeholder={`Message ${activeChannel ? '#' + title : title}`}
             value={content}
-            onChange={(e) => setContent(e.target.value)}
+            onChange={handleTyping}
             style={styles.input}
           />
           <button type="submit" style={styles.sendBtn} disabled={!content.trim()}>
@@ -152,6 +250,9 @@ const ChatArea = () => {
           </button>
         </form>
       </div>
+      {showMembers && activeChannel && (
+        <MembersList channel={activeChannel} onClose={() => setShowMembers(false)} />
+      )}
     </div>
   );
 };
@@ -164,7 +265,7 @@ const styles = {
   },
   header: {
     padding: '12px 20px',
-    borderBottom: '1px solid #eeeeee',
+    borderBottom: '1px solid var(--border-light)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -178,6 +279,31 @@ const styles = {
   title: {
     fontSize: '16px',
     fontWeight: '800',
+  },
+  headerCenter: {
+    flexGrow: 1,
+    display: 'flex',
+    justifyContent: 'center',
+    padding: '0 40px',
+  },
+  searchForm: {
+    display: 'flex',
+    alignItems: 'center',
+    backgroundColor: '#f1f1f1',
+    borderRadius: '6px',
+    padding: '4px 12px',
+    width: '100%',
+    maxWidth: '400px',
+  },
+  searchIcon: {
+    color: '#616061',
+    marginRight: '8px',
+  },
+  searchInput: {
+    border: 'none',
+    backgroundColor: 'transparent',
+    fontSize: '13px',
+    width: '100%',
   },
   headerRight: {
     display: 'flex',
@@ -229,7 +355,7 @@ const styles = {
   },
   replyBtn: {
     fontSize: '12px',
-    color: '#1264a3',
+    color: 'var(--slack-blue)',
     display: 'flex',
     alignItems: 'center',
     gap: '4px',
@@ -276,6 +402,13 @@ const styles = {
     fontSize: '18px',
     fontWeight: 'bold',
   },
+  typingIndicator: {
+    fontSize: '12px',
+    color: '#616061',
+    fontStyle: 'italic',
+    marginBottom: '4px',
+    height: '14px',
+  },
   inputArea: {
     padding: '0 20px 20px 20px',
   },
@@ -301,7 +434,7 @@ const styles = {
   },
   sendBtn: {
     padding: '8px',
-    color: '#1264a3',
+    color: 'var(--slack-blue)',
   },
   empty: {
     flexGrow: 1,
