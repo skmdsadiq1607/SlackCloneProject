@@ -66,7 +66,6 @@ callApp.post("/call", verifyToken("USER", "ADMIN"), async (req, res) => {
 
     res.status(400).json({ message: "Invalid call mode" })
 })
-
 // join a call
 callApp.patch("/call/:callId/join", verifyToken("USER", "ADMIN"), async (req, res) => {
     const { callId } = req.params

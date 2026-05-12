@@ -82,7 +82,6 @@ channelApp.patch("/channel/:id", verifyToken("USER", "ADMIN"), async (req, res) 
     await channel.save()
     res.status(200).json({ message: "Channel updated", payload: channel })
 })
-
 // Invite user to channel
 channelApp.post("/channel/:id/invite", verifyToken("USER", "ADMIN"), async (req, res) => {
     const { id } = req.params
@@ -93,21 +92,17 @@ channelApp.post("/channel/:id/invite", verifyToken("USER", "ADMIN"), async (req,
     if (!channel) {
         return res.status(404).json({ message: "Channel not found" })
     }
-
     // verify requester is a member
     if (!channel.members.some(m => m.toString() === requesterId)) {
         return res.status(403).json({ message: "Only members can invite others" })
     }
-
     if (channel.members.some(m => m.toString() === userId)) {
         return res.status(400).json({ message: "User is already a member" })
     }
-
     channel.members.push(userId)
     await channel.save()
     res.status(200).json({ message: "User invited successfully", payload: channel })
 })
-
 // Get channel members
 channelApp.get("/channel/:id/members", verifyToken("USER", "ADMIN"), async (req, res) => {
     const { id } = req.params

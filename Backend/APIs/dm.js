@@ -76,6 +76,5 @@ dmApp.post("/dm/:conversationId/message", verifyToken("USER", "ADMIN"), async (r
     conversation.participants.forEach(p => {
         io.to(`user:${p}`).emit("conversation:updated", { payload: conversation })
     })
-
     res.status(201).json({ message: "DM sent", payload: newMessage })
 })
