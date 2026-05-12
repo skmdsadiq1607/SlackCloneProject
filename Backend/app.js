@@ -20,6 +20,7 @@ app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }))
 app.use(exp.json())
 app.use(cookieParser())
 app.use('/uploads', exp.static('uploads'))
+app.get('/favicon.ico', (req, res) => res.status(204).end())
 // routes
 app.use("/api/auth", authApp)
 app.use("/api/user", userApp)
